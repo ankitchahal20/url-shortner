@@ -15,15 +15,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerURLShortnerEndPoints(handler gin.IRoutes) {
-	handler.POST(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner}, constants.ForwardSlash), service.RegisterHandler())
+func registerCreateURLShortnerEndPoints(handler gin.IRoutes) {
+	handler.POST(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner}, constants.ForwardSlash), service.CreateShorterURL())
+}
+
+func registerGetOriginalURLEndPoints(handler gin.IRoutes) {
+	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner}, constants.ForwardSlash), service.GetOriginalURL())
 }
 
 func Start() {
 	plainHandler := gin.New()
 
 	urlShortnerHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
-	registerURLShortnerEndPoints(urlShortnerHandler)
+	registerCreateURLShortnerEndPoints(urlShortnerHandler)
+	registerGetOriginalURLEndPoints(urlShortnerHandler)
 
 	srv := &http.Server{
 		Handler:      plainHandler,
