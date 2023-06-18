@@ -16,11 +16,11 @@ import (
 )
 
 func registerCreateURLShortnerEndPoints(handler gin.IRoutes) {
-	handler.POST(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner}, constants.ForwardSlash), service.CreateShorterURL())
+	handler.POST(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner, constants.ForwardSlash, constants.Create}, constants.ForwardSlash), service.CreateShorterURL())
 }
 
 func registerGetOriginalURLEndPoints(handler gin.IRoutes) {
-	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner}, constants.ForwardSlash), service.GetOriginalURL())
+	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner, constants.ForwardSlash, constants.Get}, constants.ForwardSlash), service.GetOriginalURL())
 }
 
 func Start() {

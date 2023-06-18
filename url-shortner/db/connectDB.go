@@ -9,9 +9,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type postgres struct{ db *sql.DB }
-
 func New() (postgres, error) {
+	fmt.Println("Hello")
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
