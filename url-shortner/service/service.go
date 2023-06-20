@@ -18,12 +18,12 @@ var counter int64 = 100000000000
 var urlShortnerClient *URLShortnerService
 
 type URLShortnerService struct {
-	SqlDb db.URLService
+	repo db.URLService
 }
 
 func NewURLShortner(conn db.URLService) {
 	urlShortnerClient = &URLShortnerService{
-		SqlDb: conn,
+		repo: conn,
 	}
 }
 
@@ -79,20 +79,23 @@ func (service *URLShortnerService) createShortURL(urlInfo models.URLInfo) error 
 			62 characters.
 
 		62|10009nkdaanfksdu73y8y399393
-		  | quetiont                | rem
-		   quetiont2| rem2
-		   quetiont3| rem3
+		  | quotient1	| rem1
+		  | quotient2	| rem2
+		  | quotient3	| rem3
 	*/
 
 	shortUrl := fmt.Sprintf("%s/%s", constants.Domain, service.base62Encode(randomNum))
 	if shortUrl != "" {
 		urlInfo.ShortURL = shortUrl
 	} else {
-		return errors.New("genrate short url is empty")
+		return errors.New("unable to generate short url for the given url")
 	}
 	fmt.Println("url info : ", urlInfo)
 	counter += 1
-	err := service.SqlDb.CreateShortURL(urlInfo)
+	err := service.repo.CreateShortURL(urlInfo)
+	if err != nil {
+		return err
+	}
 	return err
 }
 
@@ -114,33 +117,34 @@ func (service URLShortnerService) rangeIn(low, hi int64) int64 {
 // This function register the particular adapter based on providerID
 func GetOriginalURL() func(ctx *gin.Context) {
 	return func(context *gin.Context) {
-		var urlInfo models.URLInfo
-		if err := context.ShouldBindBodyWith(&urlInfo, binding.JSON); err == nil {
-			fmt.Println("URL Info ", urlInfo.ShortURL)
-			// Validate request body
-			if urlInfo.ShortURL == "" {
-				err := errors.New("invalid request received")
-				context.JSON(http.StatusBadRequest, gin.H{"Received url is empty": err.Error()})
-				return
-			}
-			originalURL, err := urlShortnerClient.getShortURL(urlInfo)
-			if err != nil {
-				context.Writer.WriteHeader(http.StatusInternalServerError)
-			} else {
-				http.Redirect(context.Writer, context.Request, originalURL, http.StatusMovedPermanently)
-				context.Writer.WriteHeader(http.StatusOK)
-			}
-		} else {
-			context.JSON(http.StatusBadRequest, gin.H{"Unable to marshal the request body": err.Error()})
+
+		shortURL := context.Param("url")
+		fmt.Println("URL Info ", shortURL)
+		// Validate request body
+		if shortURL == "" {
+			err := errors.New("invalid request received")
+			context.JSON(http.StatusBadRequest, gin.H{"Received url is empty": err.Error()})
+			return
 		}
+		originalURL, err := urlShortnerClient.getShortURL(shortURL)
+		fmt.Println("originalURL : ", originalURL)
+		if err != nil {
+			context.Writer.WriteHeader(http.StatusInternalServerError)
+		} else {
+			context.Redirect(http.StatusMovedPermanently, originalURL)
+			context.Writer.WriteHeader(http.StatusOK)
+		}
+
 	}
 }
 
-func (url *URLShortnerService) getShortURL(urlInfo models.URLInfo) (string, error) {
-	originalURL, err := url.SqlDb.GetOriginalURL(urlInfo)
+func (url *URLShortnerService) getShortURL(shortURL string) (string, error) {
+	shortUrl := fmt.Sprintf("%s/%s", constants.Domain, shortURL)
+	fmt.Println("shortUrl : ", shortUrl)
+	originalURL, err := url.repo.GetOriginalURL(shortUrl)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("OriginalURL : ", originalURL)
+
 	return originalURL, nil
 }

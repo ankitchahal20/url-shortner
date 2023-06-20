@@ -20,7 +20,7 @@ func registerCreateURLShortnerEndPoints(handler gin.IRoutes) {
 }
 
 func registerGetOriginalURLEndPoints(handler gin.IRoutes) {
-	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner, constants.ForwardSlash, constants.Get}, constants.ForwardSlash), service.GetOriginalURL())
+	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner, constants.ForwardSlash, ":url"}, constants.ForwardSlash), service.GetOriginalURL())
 }
 
 func Start() {
