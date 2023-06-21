@@ -1,0 +1,105 @@
+basePath: /v1/urlshortner
+definitions:
+  error.URLShortnerError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+      trace:
+        type: string
+    type: object
+  models.URLInfo:
+    properties:
+      originalurl:
+        type: string
+      shorturl:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: https://github.com/ankitchahal20/url-shortner
+    name: Ankit Chahal
+    url: none
+  description: This is a URL Shortner service. For a given long URL, it gives you
+    a short URL. You can visit the GitHub repository at https://github.com/ankitchahal20/url-shortner
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: URL Shortner
+  version: "1.0"
+paths:
+  /v1/urlshortner:
+    get:
+      consumes:
+      - application/json
+      description: Get orginal URL for a short URL
+      parameters:
+      - description: Request Fields
+        in: body
+        name: RequestFields
+        required: true
+        schema:
+          $ref: '#/definitions/models.URLInfo'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+      summary: Get orginal URL for a short URL
+  /v1/urlshortner/create:
+    post:
+      consumes:
+      - application/json
+      description: Fetches a short URL for a given long URL
+      parameters:
+      - description: Request Fields
+        in: body
+        name: RequestFields
+        required: true
+        schema:
+          $ref: '#/definitions/models.URLInfo'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/error.URLShortnerError'
+      summary: Fetches a short URL for a given long URL
+schemes:
+- http
+swagger: "2.0"

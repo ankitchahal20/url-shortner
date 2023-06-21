@@ -16,16 +16,23 @@ type URLService interface {
 	GetOriginalURL(string) (string, error)
 }
 
-func (p postgres) CreateShortURL(urlInfo models.URLInfo) error {
+var (
+	ErrNoRowFound         = errors.New("no row found in DB for the given short url")
+	ErrUnableToInsertARow = errors.New("unable to perform select opertion on the url table")
+	ErrUnableToSelectRows = errors.New("unable to perform select opertion on the url table")
+	ErrScanningRows       = errors.New("unable to scan rows")
+	ErrZeroRowsFound      = errors.New("no row found in DB for the given short url")
+)
 
+func (p postgres) CreateShortURL(urlInfo models.URLInfo) error {
 	query := `insert into url(originalurl, shorturl) values($1,$2)`
 	fmt.Println("Query : ", query)
 	_, err := p.db.Exec(query, urlInfo.OriginalURL, urlInfo.ShortURL)
 	if err != nil {
 		log.Println("unable to insert url info in table : ", err)
-		return err
+		return ErrUnableToInsertARow
 	}
-	return err
+	return nil
 
 }
 
@@ -34,20 +41,21 @@ func (p postgres) GetOriginalURL(shortURL string) (string, error) {
 	rows, err := p.db.Query(query, shortURL)
 	if err != nil {
 		log.Println("unable to perform select opertion on the url table : ", err)
-		return "", err
+		return "", ErrUnableToSelectRows
 	}
-	fmt.Println("ROWS : ", rows)
+
 	var url string
+
 	for rows.Next() {
 		err := rows.Scan(&url)
-		fmt.Println("URL : ", url)
 		if err != nil {
 			log.Printf("error scanning row: %v ", err)
-			return "", err
+			return "", ErrScanningRows
 		}
 		if url != "" {
 			return url, nil
 		}
 	}
-	return url, errors.New("no row found in DB for the given short url")
+
+	return url, ErrZeroRowsFound
 }

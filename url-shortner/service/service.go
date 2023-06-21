@@ -9,6 +9,7 @@ import (
 	"github.com/ankit/project/url-shortner/url-shortner/constants"
 	"github.com/ankit/project/url-shortner/url-shortner/db"
 	"github.com/ankit/project/url-shortner/url-shortner/models"
+	"github.com/ankit/project/url-shortner/url-shortner/urlerror"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 )
@@ -27,6 +28,16 @@ func NewURLShortner(conn db.URLService) {
 	}
 }
 
+// @Description Fetches a short URL for a given long URL
+// @Summary Fetches a short URL for a given long URL
+// @Accept       json
+// @Param RequestFields body models.URLInfo true "Request Fields"
+// @Failure					500				{object}	error.URLShortnerError	"Internal Server Error"
+// @Failure					403				{object}	error.URLShortnerError	"Forbidden"
+// @Failure					401				{object}	error.URLShortnerError	"Unauthorized"
+// @Failure					400				{object}	error.URLShortnerError	"Bad Request"
+// @Success					200				{object}	error.URLShortnerError	"OK"
+// @Router /v1/urlshortner/create [POST]
 // This function register the particular adapter based on providerID
 func CreateShorterURL() func(ctx *gin.Context) {
 	return func(context *gin.Context) {
@@ -39,11 +50,12 @@ func CreateShorterURL() func(ctx *gin.Context) {
 				context.JSON(http.StatusBadRequest, gin.H{"Received url is empty": err.Error()})
 				return
 			}
-			err := urlShortnerClient.createShortURL(urlInfo)
+			shortURL, err := urlShortnerClient.createShortURL(urlInfo)
 			if err != nil {
 				context.Writer.WriteHeader(http.StatusInternalServerError)
 			} else {
-				context.Writer.WriteHeader(http.StatusOK)
+				context.JSON(http.StatusCreated, shortURL)
+				//context.Writer.WriteHeader(http.StatusOK)
 			}
 		} else {
 			context.JSON(http.StatusBadRequest, gin.H{"Unable to marshal the request body": err.Error()})
@@ -52,51 +64,64 @@ func CreateShorterURL() func(ctx *gin.Context) {
 	}
 }
 
-func (service *URLShortnerService) createShortURL(urlInfo models.URLInfo) error {
+/*
+MD5 => Message Digest
+input=> any string
+output=128bit string => 16B => 32charters
 
+MD1, MD2, MD3,.....MD100 => first 7 characters can be same.
+
+SHA-1
+input=> any string
+output=160bit string => 20B => 40charters
+SHA1, SHA2, SHA2,.....SHA3 => first 7 characters can be same.
+
+base62
+a-z 26
+A-Z 26
+0-9 10
+---------
+
+		62 characters.
+
+	  62|10009nkdaanfksdu73y8y399393
+	  	|______________________________
+		| quotient1	| rem1
+		| quotient2	| rem2
+		| quotient3	| rem3
+*/
+func (service *URLShortnerService) createShortURL(urlInfo models.URLInfo) (string, *urlerror.URLShortnerError) {
 	fmt.Println("Request Reached till service layer")
 
 	// logic to genrate a short url for a given large url
 	randomNum := service.rangeIn(counter, 999999999999)
 
-	/*
-		MD5 => Message Digest
-		input=> any string
-		output=128bit string => 16B => 32charters
-
-		MD1, MD2, MD3,.....MD100 => first 7 characters can be same.
-
-		SHA-1
-		input=> any string
-		output=160bit string => 20B => 40charters
-		SHA1, SHA2, SHA2,.....SHA3 => first 7 characters can be same.
-
-		base62
-		a-z 26
-		A-Z 26
-		0-9 10
-		---------
-			62 characters.
-
-		62|10009nkdaanfksdu73y8y399393
-		  | quotient1	| rem1
-		  | quotient2	| rem2
-		  | quotient3	| rem3
-	*/
-
 	shortUrl := fmt.Sprintf("%s/%s", constants.Domain, service.base62Encode(randomNum))
 	if shortUrl != "" {
 		urlInfo.ShortURL = shortUrl
 	} else {
-		return errors.New("unable to generate short url for the given url")
+		return "", &urlerror.URLShortnerError{
+			Status:  "Service Unavailable",
+			Code:    http.StatusInternalServerError,
+			Message: "unable to generate short url for the given url",
+		}
 	}
 	fmt.Println("url info : ", urlInfo)
 	counter += 1
 	err := service.repo.CreateShortURL(urlInfo)
 	if err != nil {
-		return err
+		if errors.Is(err, db.ErrUnableToInsertARow) {
+			return "", &urlerror.URLShortnerError{
+				Status:  "Service Unavailable",
+				Code:    http.StatusInternalServerError,
+				Message: "unable to generate short url for the given url",
+			}
+		}
+
+		//return "", &urlerror.URLShortnerError{}
+
 	}
-	return err
+	return shortUrl, nil
 }
 
 func (service URLShortnerService) base62Encode(randomNum int64) string {
@@ -114,6 +139,16 @@ func (service URLShortnerService) rangeIn(low, hi int64) int64 {
 	return low + rand.Int63n(hi-low)
 }
 
+// @Description Get orginal URL for a short URL
+// @Summary Get orginal URL for a short URL
+// @Accept       json
+// @Param RequestFields body models.URLInfo true "Request Fields"
+// @Failure					500				{object}	error.URLShortnerError	"Internal Server Error"
+// @Failure					403				{object}	error.URLShortnerError	"Forbidden"
+// @Failure					401				{object}	error.URLShortnerError	"Unauthorized"
+// @Failure					400				{object}	error.URLShortnerError	"Bad Request"
+// @Success					200				{object}	error.URLShortnerError	"OK"
+// @Router /v1/urlshortner [GET]
 // This function register the particular adapter based on providerID
 func GetOriginalURL() func(ctx *gin.Context) {
 	return func(context *gin.Context) {
@@ -138,12 +173,18 @@ func GetOriginalURL() func(ctx *gin.Context) {
 	}
 }
 
-func (url *URLShortnerService) getShortURL(shortURL string) (string, error) {
+func (url *URLShortnerService) getShortURL(shortURL string) (string, *urlerror.URLShortnerError) {
 	shortUrl := fmt.Sprintf("%s/%s", constants.Domain, shortURL)
 	fmt.Println("shortUrl : ", shortUrl)
 	originalURL, err := url.repo.GetOriginalURL(shortUrl)
 	if err != nil {
-		return "", err
+		if errors.Is(err, db.ErrNoRowFound) {
+
+		} else if errors.Is(err, db.ErrScanningRows) {
+
+		} else if errors.Is(err, db.ErrUnableToSelectRows) {
+
+		}
 	}
 
 	return originalURL, nil

@@ -1,0 +1,158 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a URL Shortner service. For a given long URL, it gives you a short URL. You can visit the GitHub repository at https://github.com/ankitchahal20/url-shortner",
+        "title": "URL Shortner",
+        "contact": {
+            "name": "Ankit Chahal",
+            "url": "none",
+            "email": "https://github.com/ankitchahal20/url-shortner"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/v1/urlshortner",
+    "paths": {
+        "/v1/urlshortner": {
+            "get": {
+                "description": "Get orginal URL for a short URL",
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Get orginal URL for a short URL",
+                "parameters": [
+                    {
+                        "description": "Request Fields",
+                        "name": "RequestFields",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.URLInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/urlshortner/create": {
+            "post": {
+                "description": "Fetches a short URL for a given long URL",
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Fetches a short URL for a given long URL",
+                "parameters": [
+                    {
+                        "description": "Request Fields",
+                        "name": "RequestFields",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.URLInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/error.URLShortnerError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "error.URLShortnerError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "trace": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.URLInfo": {
+            "type": "object",
+            "properties": {
+                "originalurl": {
+                    "type": "string"
+                },
+                "shorturl": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

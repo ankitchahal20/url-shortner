@@ -13,6 +13,8 @@ import (
 	"github.com/ankit/project/url-shortner/url-shortner/constants"
 	"github.com/ankit/project/url-shortner/url-shortner/service"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func registerCreateURLShortnerEndPoints(handler gin.IRoutes) {
@@ -23,12 +25,18 @@ func registerGetOriginalURLEndPoints(handler gin.IRoutes) {
 	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.UrlShortner, constants.ForwardSlash, ":url"}, constants.ForwardSlash), service.GetOriginalURL())
 }
 
+func registerURLShortnerDocsEndpoints(handler gin.IRoutes) {
+	handler.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+}
+
 func Start() {
 	plainHandler := gin.New()
 
 	urlShortnerHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
 	registerCreateURLShortnerEndPoints(urlShortnerHandler)
 	registerGetOriginalURLEndPoints(urlShortnerHandler)
+	registerURLShortnerDocsEndpoints(urlShortnerHandler)
 
 	srv := &http.Server{
 		Handler:      plainHandler,
